@@ -1,0 +1,1 @@
+Blacklisted words include virtual, computer, circuit, any word related with electronics, computer, digital

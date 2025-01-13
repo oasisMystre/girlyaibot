@@ -1,0 +1,53 @@
+import "dotenv/config";
+import cors from "@fastify/cors";
+import { type Context, Telegraf } from "telegraf";
+import Fastify, { type FastifyRequest } from "fastify";
+
+import { registerBot } from "./bot";
+
+async function main() {
+  const bot = new Telegraf(process.env.TELEGRAM_ACCESS_TOKEN!);
+  const server = Fastify({
+    logger: true,
+    ignoreDuplicateSlashes: true,
+    ignoreTrailingSlash: true,
+  });
+
+  server.register(cors, {
+    origin: [/127.0.0.1/, /localhost/],
+  });
+
+  registerBot(bot);
+
+  const tasks = [];
+
+  if ("RENDER_EXTERNAL_HOSTNAME" in process.env) {
+    const webhook = await bot.createWebhook({
+      domain: process.env.RENDER_EXTERNAL_HOSTNAME!,
+    });
+    server.post(
+      "/telegraf/" + bot.secretPathComponent(),
+      webhook as unknown as (request: FastifyRequest) => void,
+    );
+  } else tasks.push(bot.launch());
+
+  tasks.push(
+    server.listen({
+      host: process.env.HOST,
+      port: process.env.PORT ? Number(process.env.PORT!) : undefined,
+    }),
+  );
+
+  process.on("SIGINT", () => {
+    bot.stop("SIGINT");
+    return server.close();
+  });
+  process.on("SIGTERM", () => {
+    bot.stop("SIGTERM");
+    return server.close();
+  });
+
+  return await Promise.all(tasks);
+}
+
+main();
