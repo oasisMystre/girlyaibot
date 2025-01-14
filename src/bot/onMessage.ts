@@ -104,21 +104,20 @@ export const onMessage = async (context: Scenes.WizardContext) => {
       const requestImage = whitelists.some((whitelist) =>
         text.toLowerCase().includes(whitelist),
       );
-
-      console.log(requestImage);
-
+      
       const character = await getCharacterByUserAndId(
         db,
         context.user!.id,
         context.user!.currentCharacter,
       );
 
-      if (requestImage)
-        return composePhotoMessage(context, {
-          prompt: text,
-          photo: character!.image,
-        });
-      else return composeTextMessage(context, character!, text);
+      if (character)
+        if (requestImage)
+          return composePhotoMessage(context, {
+            prompt: text,
+            photo: character!.image,
+          });
+        else return composeTextMessage(context, character!, text);
     }
   }
 };
