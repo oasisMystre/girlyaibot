@@ -3,8 +3,9 @@ import axios from "axios";
 import mime from "mime-types";
 import { fal } from "@fal-ai/client";
 import { Input, type Context } from "telegraf";
-import { getCharacterByUserAndId } from "modules/characters/character.controller";
-import { db } from "db";
+
+import { db } from "../db";
+import { getCharacterByUserAndId } from "../modules/characters/character.controller";
 
 type Args = {
   prompt?: string;
