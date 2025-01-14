@@ -9,7 +9,6 @@ import {
   getContextByUser,
 } from "../modules/contexts/context.controller";
 
-import { composePhotoMessage } from "./onPhoto";
 import { cleanText, readFileSync } from "./utils/formatText";
 
 export const composeTextMessage = async (
@@ -111,7 +110,9 @@ export const onMessage = async (context: Scenes.WizardContext) => {
 
       if (character)
         if (requestImage)
-          return context.reply("Request a picture of your girlfriend using /picture command");
+          return context.reply(
+            "Request a picture of your girlfriend using /picture command",
+          );
         else return composeTextMessage(context, character!, text);
     }
   }
