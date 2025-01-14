@@ -42,8 +42,8 @@ export const registerBot = (bot: Telegraf) => {
 
   bot.start(catchRuntimeError(onStart));
   bot.command("cancel", onCancel);
+  bot.command("picture", catchRuntimeError(onPhoto));
   bot.on(message("audio"), catchRuntimeError(onAudio));
-  bot.on(message("photo"), catchRuntimeError(onPhoto));
   bot.on(message("text"), (context, next) => {
     if ("message" in context && context.message && "text" in context.message) {
       const text = context.message.text;

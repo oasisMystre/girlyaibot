@@ -3,6 +3,8 @@ import axios from "axios";
 import mime from "mime-types";
 import { fal } from "@fal-ai/client";
 import { Input, type Context } from "telegraf";
+import { getCharacterByUserAndId } from "modules/characters/character.controller";
+import { db } from "db";
 
 type Args = {
   prompt?: string;
@@ -27,16 +29,14 @@ export const composePhotoMessage = async (context: Context, args: Args) => {
 
         return await fal.storage.upload(file);
       })();
-  console.log(args.prompt);
 
   const result = await fal.subscribe(
-    "fal-ai/fast-turbo-diffusion/image-to-image",
+    "fal-ai/flux-pro/v1.1/redux",
     {
       input: {
         image_url: url,
-        enable_safety_checker: false,
+        safety_tolerance: "6",
         image_size: "square",
-
         prompt: args.prompt ?? "Send me a picture of you undressed",
       },
     },
@@ -56,15 +56,18 @@ export const composePhotoMessage = async (context: Context, args: Args) => {
 
 export const onPhoto = async (context: Context) => {
   const message = context.message;
-  if (message && "photo" in message) {
-    const [photo] = await Promise.all(
-      message.photo
-        .slice(message.photo.length - 1)
-        .map((photo) => context.telegram.getFileLink(photo.file_id)),
+  if (message && "text" in message) {
+    const character = await getCharacterByUserAndId(
+      db,
+      context.user!.id,
+      context.user!.currentCharacter,
     );
-    return composePhotoMessage(context, {
-      prompt: message.caption,
-      photo: photo.toString(),
-    });
+    const [, text] = message.text.split(/^\/picture/).filter(Boolean)
+    if (character)
+      return composePhotoMessage(context, {
+        cached: true,
+        prompt:text,
+        photo: character.image,
+      });
   }
 };

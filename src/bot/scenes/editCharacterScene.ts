@@ -4,7 +4,10 @@ import { fal } from "@fal-ai/client";
 import { db } from "../../db";
 import { cleanText, readFileSync } from "../utils/formatText";
 import { composeCharacterMessage } from "../actions/onCharacters";
-import { updateCharacterByUserAndId } from "../../modules/characters/character.controller";
+import {
+  getCharacterByUserAndId,
+  updateCharacterByUserAndId,
+} from "../../modules/characters/character.controller";
 
 type SessionState = {
   name: string;
@@ -40,33 +43,43 @@ export const editCharacterScene = () => {
           ...context.scene.session.state,
         };
         const { name, ...state } = context.scene.session.state as SessionState;
-        const characterPrompt = state.personality;
 
-        const result = await fal.subscribe("fal-ai/fast-lightning-sdxl", {
-          input: {
-            prompt: readFileSync(
-              "./src/bot/locale/character.md",
-              "utf-8",
-            ).replace("%personality%", cleanText(state.personality)),
-            num_images: 1,
-            image_size: "square_hd",
-          },
-        });
-
-        const [character] = await updateCharacterByUserAndId(
+        let character = await getCharacterByUserAndId(
           db,
           context.user!.id,
           context.user!.currentCharacter,
-          {
-            name,
-            characterPrompt,
-            image: result.data.images[0].url,
-          },
         );
+        const characterPrompt = state.personality;
 
-        await composeCharacterMessage(context, character);
+        if (character) {
+          const result = await fal.subscribe("fal-ai/flux-pro/v1.1/redux", {
+            input: {
+              image_url: character.image,
+              prompt: readFileSync(
+                "./src/bot/locale/character.md",
+                "utf-8",
+              ).replace("%personality%", cleanText(state.personality)),
+              num_images: 1,
+              safety_tolerance: "6",
+              image_size: "square",
+            },
+          });
 
-        return context.scene.leave();
+          [character] = await updateCharacterByUserAndId(
+            db,
+            context.user!.id,
+            context.user!.currentCharacter,
+            {
+              name,
+              characterPrompt,
+              image: result.data.images[0].url,
+            },
+          );
+
+          await composeCharacterMessage(context, character);
+
+          return context.scene.leave();
+        }
       }
     },
   );
