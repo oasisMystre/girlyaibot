@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 import type { Database } from "../../db";
 import { characters } from "../../db/schema/characters";
@@ -16,19 +16,39 @@ export const createCharacter = (
 export const getCharactersByUser = (
   db: Database,
   user: Zod.infer<typeof userSelectSchema>["id"],
+  limit?: number,
+  offset?: number,
 ) =>
-  db.query.characters.findMany({
-    where: eq(characters.user, user),
-  });
+  db.query.characters
+    .findMany({
+      where: eq(characters.user, user),
+      limit,
+      offset,
+    })
+    .execute();
+
+export const getCharactersCountByUser = (
+  db: Database,
+  user: Zod.infer<typeof userSelectSchema>["id"],
+) =>
+  db
+    .select({
+      count: count(characters.id),
+    })
+    .from(characters)
+    .where(eq(characters.user, user))
+    .execute();
 
 export const getCharacterByUserAndId = (
   db: Database,
   user: Zod.infer<typeof userSelectSchema>["id"],
-    id: Zod.infer<typeof characterSelectSchema>["id"],
+  id: Zod.infer<typeof characterSelectSchema>["id"],
 ) =>
-  db.query.characters.findFirst({
-    where: and(eq(characters.user, user), eq(characters.id, id)),
-  });
+  db.query.characters
+    .findFirst({
+      where: and(eq(characters.user, user), eq(characters.id, id)),
+    })
+    .execute();
 
 export const updateCharacterByUserAndId = (
   db: Database,

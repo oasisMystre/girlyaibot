@@ -2,13 +2,87 @@ import type { Scenes } from "telegraf";
 
 import { db } from "../db";
 import OpenAI from "../lib/openai";
+import type { characterSelectSchema } from "../db/zod";
 import { getCharacterByUserAndId } from "../modules/characters/character.controller";
 import {
   createContext,
   getContextByUser,
 } from "../modules/contexts/context.controller";
 
+import { composePhotoMessage } from "./onPhoto";
 import { cleanText, readFileSync } from "./utils/formatText";
+
+export const composeTextMessage = async (
+  context: Scenes.WizardContext,
+  character: Zod.infer<typeof characterSelectSchema>,
+  text: string,
+) => {
+  const contexts = await getContextByUser(
+    db,
+    context.user!.currentCharacter,
+    undefined,
+    5,
+    0,
+  );
+
+  const systemMessages = [
+    {
+      role: "system" as const,
+      content: [
+        {
+          type: "text" as const,
+          text: readFileSync("./src/bot/locale/system.md").replace(
+            "%name%",
+            character!.name,
+          ),
+        },
+        {
+          type: "text" as const,
+          text: readFileSync("./src/bot/locale/blacklist.md"),
+        },
+        {
+          type: "text" as const,
+          text: character.characterPrompt,
+        },
+      ],
+    },
+  ];
+
+  const messages = contexts.flatMap(({ prompt, response }) => [
+    {
+      role: "user" as const,
+      content: prompt,
+    },
+    {
+      role: "assistant" as const,
+      content: response,
+    },
+  ]);
+
+  messages.push({ role: "user", content: text });
+
+  const chat = await OpenAI.instance.openai.chat.completions.create({
+    messages: [...systemMessages, ...messages],
+    model: "gpt-3.5-turbo",
+  });
+
+  const response = chat.choices
+    .map((choice) => {
+      const content = choice.message.content;
+      return content;
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  await createContext(db, {
+    response,
+    type: "text",
+    prompt: text,
+    character: context.user!.currentCharacter,
+  });
+
+  return context.replyWithMarkdownV2(cleanText(response));
+};
 
 export const onMessage = async (context: Scenes.WizardContext) => {
   const message = context.message;
@@ -17,76 +91,34 @@ export const onMessage = async (context: Scenes.WizardContext) => {
     if (!context.user.currentCharacter) {
       return context.scene.enter("create");
     } else if (message && "text" in message) {
+      const text = message.text;
+      const whitelists = [
+        "image",
+        "images",
+        "photo",
+        "picture",
+        "pictures",
+        "photos",
+      ];
+
+      const requestImage = whitelists.some((whitelist) =>
+        text.toLowerCase().includes(whitelist),
+      );
+
+      console.log(requestImage);
+
       const character = await getCharacterByUserAndId(
         db,
         context.user!.id,
-        context.user.currentCharacter,
-      );
-      const contexts = await getContextByUser(
-        db,
         context.user!.currentCharacter,
-        undefined,
-        10,
-        0,
       );
 
-      const systemMessages = [
-        {
-          role: "system" as const,
-          content: [
-            {
-              type: "text" as const,
-              text: readFileSync("./src/bot/locale/system.md").replace(
-                "%name%",
-                character!.name,
-              ),
-            },
-            {
-              type: "text" as const,
-              text: readFileSync("./src/bot/locale/blacklist.md"),
-            },
-            {
-              type: "text" as const,
-              text: character!.characterPrompt,
-            },
-          ],
-        },
-      ];
-
-      const messages = contexts.flatMap(({ prompt, response }) => [
-        {
-          role: "user" as const,
-          content: prompt,
-        },
-        {
-          role: "assistant" as const,
-          content: response,
-        },
-      ]);
-
-      messages.push({ role: "user", content: message.text });
-
-      const chat = await OpenAI.instance.openai.chat.completions.create({
-        messages: [...systemMessages, ...messages],
-        model: "gpt-3.5-turbo",
-      });
-
-      const response = chat.choices
-        .map((choice) => {
-          const content = choice.message.content;
-          return content;
-        })
-        .filter(Boolean)
-        .join("\n");
-
-      await createContext(db, {
-        response,
-        type: "text",
-        prompt: message.text,
-        character: context.user.currentCharacter,
-      });
-
-      return context.replyWithMarkdownV2(cleanText(response));
+      if (requestImage)
+        return composePhotoMessage(context, {
+          prompt: text,
+          photo: character!.image,
+        });
+      else return composeTextMessage(context, character!, text);
     }
   }
 };
