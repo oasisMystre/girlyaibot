@@ -27,10 +27,12 @@ export const composePhotoMessage = async (context: Context, args: Args) => {
 
         return await fal.storage.upload(file);
       })();
-  const result = await fal.subscribe("fal-ai/flux/dev/image-to-image", {
+  const result = await fal.subscribe("fal-ai/flux-pro/v1.1/redux", {
     input: {
       image_url: url,
-      prompt: args.prompt ?? "Undress image",
+      safety_tolerance: "6",
+      image_size: "square",
+      prompt: args.prompt ?? "Send me a picture of you undressed",
     },
   });
 
