@@ -1,1 +1,1 @@
-Generate a busty, sexy, naked image with the following characteristics, %personality%
+One girl, busty, sexy, naked, with the following characteristics, %personality%
