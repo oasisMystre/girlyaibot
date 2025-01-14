@@ -59,8 +59,6 @@ export const composeTextMessage = async (
 
   messages.push({ role: "user", content: text });
 
-  console.log(JSON.stringify([...systemMessages, ...messages], undefined, 2));
-
   const chat = await OpenAI.instance.openai.chat.completions.create({
     messages: [...systemMessages, ...messages],
     model: "gpt-4-turbo",
@@ -113,10 +111,7 @@ export const onMessage = async (context: Scenes.WizardContext) => {
 
       if (character)
         if (requestImage)
-          return composePhotoMessage(context, {
-            prompt: text,
-            photo: character!.image,
-          });
+          return context.reply("Request a picture of your girlfriend using /picture command");
         else return composeTextMessage(context, character!, text);
     }
   }

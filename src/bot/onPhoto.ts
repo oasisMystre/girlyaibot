@@ -31,17 +31,14 @@ export const composePhotoMessage = async (context: Context, args: Args) => {
         return await fal.storage.upload(file);
       })();
 
-  const result = await fal.subscribe(
-    "fal-ai/flux-pro/v1.1/redux",
-    {
-      input: {
-        image_url: url,
-        safety_tolerance: "6",
-        image_size: "square",
-        prompt: args.prompt ?? "Send me a picture of you undressed",
-      },
+  const result = await fal.subscribe("fal-ai/flux-pro/v1.1/redux", {
+    input: {
+      image_url: url,
+      safety_tolerance: "6",
+      image_size: "square",
+      prompt: args.prompt ?? "Send me a picture of you undressed",
     },
-  );
+  });
 
   const [image] = result.data.images;
   const isBaseURL = image.url.includes(";base64,");
@@ -63,11 +60,11 @@ export const onPhoto = async (context: Context) => {
       context.user!.id,
       context.user!.currentCharacter,
     );
-    const [, text] = message.text.split(/^\/picture/).filter(Boolean)
+    const [, text] = message.text.split(/^\/picture/).filter(Boolean);
     if (character)
       return composePhotoMessage(context, {
         cached: true,
-        prompt:text,
+        prompt: text,
         photo: character.image,
       });
   }
