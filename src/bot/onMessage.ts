@@ -21,8 +21,6 @@ export const composeTextMessage = async (
     db,
     context.user!.currentCharacter,
     undefined,
-    5,
-    0,
   );
 
   const systemMessages = [
@@ -31,14 +29,14 @@ export const composeTextMessage = async (
       content: [
         {
           type: "text" as const,
-          text: readFileSync("./src/bot/locale/system.md").replace(
+          text: readFileSync("./src/bot/locale/system.md", "utf-8").replace(
             "%name%",
             character!.name,
           ),
         },
         {
           type: "text" as const,
-          text: readFileSync("./src/bot/locale/blacklist.md"),
+          text: readFileSync("./src/bot/locale/blacklist.md", "utf-8"),
         },
         {
           type: "text" as const,
@@ -61,9 +59,11 @@ export const composeTextMessage = async (
 
   messages.push({ role: "user", content: text });
 
+  console.log(JSON.stringify([...systemMessages, ...messages], undefined, 2));
+
   const chat = await OpenAI.instance.openai.chat.completions.create({
     messages: [...systemMessages, ...messages],
-    model: "gpt-3.5-turbo",
+    model: "gpt-4-turbo",
   });
 
   const response = chat.choices
@@ -104,7 +104,7 @@ export const onMessage = async (context: Scenes.WizardContext) => {
       const requestImage = whitelists.some((whitelist) =>
         text.toLowerCase().includes(whitelist),
       );
-      
+
       const character = await getCharacterByUserAndId(
         db,
         context.user!.id,

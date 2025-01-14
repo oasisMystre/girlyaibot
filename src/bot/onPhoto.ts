@@ -27,17 +27,30 @@ export const composePhotoMessage = async (context: Context, args: Args) => {
 
         return await fal.storage.upload(file);
       })();
-  const result = await fal.subscribe("fal-ai/flux-pro/v1.1/redux", {
-    input: {
-      image_url: url,
-      safety_tolerance: "6",
-      image_size: "square",
-      prompt: args.prompt ?? "Send me a picture of you undressed",
+  console.log(args.prompt);
+
+  const result = await fal.subscribe(
+    "fal-ai/fast-turbo-diffusion/image-to-image",
+    {
+      input: {
+        image_url: url,
+        enable_safety_checker: false,
+        image_size: "square",
+
+        prompt: args.prompt ?? "Send me a picture of you undressed",
+      },
     },
-  });
+  );
 
   const [image] = result.data.images;
+  const isBaseURL = image.url.includes(";base64,");
 
+  if (isBaseURL)
+    return context.replyWithPhoto(
+      Input.fromBuffer(
+        Buffer.from(image.url.split(";base64,").pop()!, "base64"),
+      ),
+    );
   return context.replyWithPhoto(Input.fromURL(image.url));
 };
 
