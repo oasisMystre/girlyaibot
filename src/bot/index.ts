@@ -15,8 +15,8 @@ import { onStart } from "./onStart";
 import { onAudio } from "./onAudio";
 import { onPhoto } from "./onPhoto";
 import { onMessage } from "./onMessage";
-import { catchRuntimeError } from "./utils/atomic";
 import { registerActions } from "./actions";
+import { catchRuntimeError } from "./utils/atomic";
 
 export const registerBot = (bot: Telegraf) => {
   const authenticate = async (context: Context, next: () => Promise<void>) => {
