@@ -5,4 +5,4 @@ I can help you create a customized girlfriend personality\.
 
 Click on any of the actions below to continue\!
 
-[Telegram](https://t\.me/girly_ai) \| [Twitter](https://x\.com/GirlyAI_)
+[Telegram](https://t\.co/WjWTakdFth) \| [Twitter](https://x\.com/Mygirlfriend_Ai) \| [Website](https://mygfai\.fun)
