@@ -7,9 +7,12 @@ export const onCharacter = async (context: Context) => {
   const message = context.callbackQuery;
   if (message && "data" in message) {
     const [id] = Array.from(message.data.match(/\d+/g)!);
+    console.log(id);
+    console.log(message.data);
     [context.user] = await updateUserById(db, context.user!.id, {
       currentCharacter: Number(id),
     });
+    
     return context.reply("Hi babe ❤️.");
   }
 };

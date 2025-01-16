@@ -49,6 +49,7 @@ export const registerBot = (bot: Telegraf) => {
       const text = context.message.text;
       if (/^\//.test(text) || context.message.reply_to_message?.from?.is_bot)
         return next();
+      
       return catchRuntimeError<
         Scenes.WizardContext,
         MiddlewareFn<Scenes.WizardContext>

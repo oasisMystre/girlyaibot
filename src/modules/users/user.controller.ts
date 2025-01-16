@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import { users } from "../../db/schema";
 import type { Database } from "../../db";
 import type { userInsertSchema } from "../../db/zod";
@@ -18,6 +20,6 @@ export const createUser = (
 
 export const updateUserById = (
   db: Database,
-  id: Zod.infer<typeof userInsertSchema>['id'],
+  id: Zod.infer<typeof userInsertSchema>["id"],
   values: Partial<Zod.infer<typeof userInsertSchema>>,
-) => db.update(users).set(values).returning().execute();
+) => db.update(users).set(values).where(eq(users.id, id)).returning().execute();
